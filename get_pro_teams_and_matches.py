@@ -18,13 +18,19 @@ teams = teams['team_id']
 
 print(len(teams))
 
-for team in teams:
+
+def request_team_matches_for_period(team, patch_date_release, patch_date_end):
     url = 'https://api.opendota.com/api/teams/' + str(team) + '/matches'
     print('Getting matches for team {}'.format(team), flush=True)
     response = requests.get(url)
     print(response)
     team_matches = pd.DataFrame.from_dict(response.json())
     team_matches = team_matches[(team_matches['start_time'] >= patch_date_release) & (team_matches['start_time'] < patch_date_end)]
+    return team_matches
+
+
+for team in teams:
+    team_matches = request_team_matches_for_period(team, patch_date_release, patch_date_end)
     if len(team_matches) >= 5:
         unsollicited_teams = team_matches[~team_matches['opposing_team_id'].isin(teams)]
         teams_not_collected = teams_not_collected.append(unsollicited_teams['opposing_team_id'])
@@ -41,12 +47,7 @@ print('Teams not collected: {}'.format(len(teams_not_collected)))
 print('Getting second run of teams...')
 
 for team in teams_not_collected:
-    url = 'https://api.opendota.com/api/teams/' + str(team) + '/matches'
-    print('Getting matches for team {}'.format(team), flush=True)
-    response = requests.get(url)
-    print(response)
-    team_matches = pd.DataFrame.from_dict(response.json())
-    team_matches = team_matches[(team_matches['start_time'] >= patch_date_release) & (team_matches['start_time'] < patch_date_end)]
+    team_matches = request_team_matches_for_period(team, patch_date_release, patch_date_end)
     if len(team_matches) >= 5:
         unsollicited_teams = team_matches[~team_matches['opposing_team_id'].isin(teams)]
         teams_not_collected_second = teams_not_collected_second.append(unsollicited_teams['opposing_team_id'])
@@ -61,12 +62,7 @@ print('Teams not collected: {}'.format(len(teams_not_collected_second)))
 print('Getting last run of teams...')
 
 for team in teams_not_collected_second:
-    url = 'https://api.opendota.com/api/teams/' + str(team) + '/matches'
-    print('Getting matches for team {}'.format(team), flush=True)
-    response = requests.get(url)
-    print(response)
-    team_matches = pd.DataFrame.from_dict(response.json())
-    team_matches = team_matches[(team_matches['start_time'] >= patch_date_release) & (team_matches['start_time'] < patch_date_end)]
+    team_matches = request_team_matches_for_period(team, patch_date_release, patch_date_end)
     if len(team_matches) >= 5:
         matches = matches.append(team_matches['match_id'], ignore_index=True)
     time.sleep(1)
